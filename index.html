@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>はじめてのGenspark〜AIに丸投げしてみよう〜</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ===== CSS変数 ===== */
+    :root {
+      --color-primary: #0066cc;
+      --color-primary-focus: #0071e3;
+      --color-canvas: #ffffff;
+      --color-parchment: #f5f5f7;
+      --color-ink: #1d1d1f;
+      --color-muted: #595959;
+      --color-divider: #e0e0e0;
+      --color-summary-bg: #fdf9f0;
+      --color-analogy-bg: #e8f2ff;
+      --color-badge-bg: #0066cc;
+    }
+
+    /* ===== リセット ===== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 18px;
+    }
+
+    body {
+      font-family: 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+      font-size: 18px;
+      line-height: 1.8;
+      color: var(--color-ink);
+      background-color: var(--color-canvas);
+      padding-top: calc(55px + env(safe-area-inset-top));
+      padding-bottom: calc(56px + env(safe-area-inset-bottom));
+    }
+
+    /* ===== 固定ヘッダー ===== */
+    #site-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      padding-top: env(safe-area-inset-top);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      padding: 0 20px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .site-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-ink);
+      letter-spacing: -0.3px;
+    }
+
+    #chapter-indicator {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+
+    #progress-bar-wrapper {
+      height: 3px;
+      background: var(--color-divider);
+      width: 100%;
+    }
+
+    #progress-bar {
+      height: 3px;
+      background: var(--color-primary);
+      width: 0%;
+      transition: width 0.1s ease;
+    }
+
+    /* ===== 固定フッター ===== */
+    #site-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      padding: 0 20px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    /* ===== ボタン共通 ===== */
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      min-width: 44px;
+      padding: 10px 22px;
+      border-radius: 9999px;
+      border: none;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      text-decoration: none;
+      line-height: 1;
+    }
+
+    .nav-btn--outline {
+      background: transparent;
+      border: 2px solid var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    .nav-btn--outline:hover {
+      background: var(--color-analogy-bg);
+    }
+
+    .nav-btn--primary {
+      background: var(--color-primary);
+      color: #fff;
+    }
+
+    .nav-btn--primary:hover {
+      background: var(--color-primary-focus);
+    }
+
+    .nav-btn:focus-visible {
+      outline: 3px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    .nav-btn--hidden {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* 320px端末でフッターボタンのテキストが溢れないよう縮小 */
+    @media (max-width: 380px) {
+      .nav-btn {
+        padding: 10px 14px;
+        font-size: 13px;
+      }
+    }
+
+    /* ===== メインコンテンツ ===== */
+    #main-content {
+      /* padding already on body */
+    }
+
+    /* ===== 章セクション ===== */
+    .chapter {
+      padding: 48px 0;
+    }
+
+    .chapter:nth-child(even) {
+      background-color: var(--color-parchment);
+    }
+
+    .chapter:nth-child(odd) {
+      background-color: var(--color-canvas);
+    }
+
+    .chapter-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    @media (min-width: 641px) {
+      .chapter-inner {
+        padding: 0 32px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .chapter {
+        padding: 72px 0;
+      }
+      .chapter-inner {
+        padding: 0 24px;
+      }
+    }
+
+    /* ===== 章バッジ ===== */
+    .chapter-badge {
+      display: inline-block;
+      background: var(--color-badge-bg);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 9999px;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== 章タイトル ===== */
+    .chapter-title {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: var(--color-ink);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .chapter-subtitle {
+      font-size: 16px;
+      color: var(--color-muted);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .chapter-intro {
+      margin-bottom: 28px;
+      line-height: 1.8;
+    }
+
+    /* ===== 安心メモボックス ===== */
+    .notice-box {
+      background: var(--color-summary-bg);
+      border: 2px solid #e8d5a0;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 28px;
+    }
+
+    .notice-box-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-ink);
+      margin-bottom: 10px;
+    }
+
+    .notice-box ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .notice-box ul li {
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--color-ink);
+      padding: 2px 0;
+    }
+
+    .notice-box ul li::before {
+      content: "• ";
+      color: var(--color-primary);
+      font-weight: 700;
+    }
+
+    /* ===== 比喩カード ===== */
+    .analogy-card {
+      background: var(--color-analogy-bg);
+      border-left: 4px solid var(--color-primary);
+      border-radius: 0 12px 12px 0;
+      padding: 18px 20px;
+      margin-bottom: 28px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .analogy-icon {
+      font-size: 22px;
+      line-height: 1;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .analogy-card p {
+      font-size: 17px;
+      line-height: 1.7;
+      color: var(--color-ink);
+      font-weight: 400;
+    }
+
+    /* ===== コンテンツリスト ===== */
+    .content-list {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 28px;
+    }
+
+    .content-list li {
+      padding: 10px 0 10px 28px;
+      position: relative;
+      border-bottom: 1px solid var(--color-divider);
+      line-height: 1.7;
+      font-size: 17px;
+    }
+
+    .content-list li:last-child {
+      border-bottom: none;
+    }
+
+    .content-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--color-primary);
+      font-weight: 700;
+      font-size: 16px;
+      top: 12px;
+    }
+
+    /* ===== 操作手順リスト ===== */
+    .steps-list {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 28px;
+      counter-reset: steps;
+    }
+
+    .steps-list li {
+      padding: 12px 0 12px 44px;
+      position: relative;
+      border-bottom: 1px solid var(--color-divider);
+      line-height: 1.7;
+      font-size: 17px;
+      counter-increment: steps;
+    }
+
+    .steps-list li:last-child {
+      border-bottom: none;
+    }
+
+    .steps-list li::before {
+      content: counter(steps);
+      position: absolute;
+      left: 0;
+      top: 10px;
+      width: 28px;
+      height: 28px;
+      background: var(--color-primary);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ===== 対比テーブル ===== */
+    .table-wrapper {
+      overflow-x: auto;
+      margin-bottom: 28px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .compare-table {
+      width: 100%;
+      min-width: 460px;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+
+    @media (max-width: 480px) {
+      .compare-table {
+        min-width: 360px;
+        font-size: 13px;
+      }
+      .compare-table th,
+      .compare-table td {
+        padding: 8px 10px;
+      }
+    }
+
+    .compare-table th {
+      background: var(--color-primary);
+      color: #fff;
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+    }
+
+    .compare-table th:first-child {
+      border-radius: 8px 0 0 0;
+      width: 120px;
+    }
+
+    .compare-table th:last-child {
+      border-radius: 0 8px 0 0;
+    }
+
+    .compare-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--color-divider);
+      line-height: 1.6;
+      vertical-align: top;
+    }
+
+    .compare-table tr:nth-child(even) td {
+      background: var(--color-parchment);
+    }
+
+    .compare-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ===== 会話例 ===== */
+    .chat-example {
+      margin-bottom: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .chat-bubble {
+      max-width: 85%;
+      padding: 14px 18px;
+      border-radius: 18px;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .chat-bubble--user {
+      background: var(--color-primary);
+      color: #fff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-bubble--ai {
+      background: #f0f0f0;
+      color: var(--color-ink);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .chat-bubble--label {
+      font-size: 14px;
+      color: var(--color-muted);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .chat-message {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-message--user {
+      align-items: flex-end;
+    }
+
+    .chat-message--ai {
+      align-items: flex-start;
+    }
+
+    /* ===== フロー図 ===== */
+    .flow-diagram {
+      background: var(--color-parchment);
+      border: 1px solid var(--color-divider);
+      border-radius: 12px;
+      padding: 24px 20px;
+      margin-bottom: 28px;
+      font-size: 15px;
+    }
+
+    .flow-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 6px 0;
+    }
+
+    .flow-box {
+      background: #fff;
+      border: 2px solid var(--color-primary);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-weight: 600;
+      color: var(--color-primary);
+      flex-shrink: 0;
+    }
+
+    .flow-box--user {
+      background: var(--color-primary);
+      color: #fff;
+    }
+
+    .flow-step {
+      background: var(--color-analogy-bg);
+      border: 1px solid #b3d1f5;
+      border-radius: 8px;
+      padding: 8px 14px;
+      flex: 1;
+      line-height: 1.5;
+      font-size: 15px;
+    }
+
+    .flow-arrow {
+      font-size: 18px;
+      color: var(--color-primary);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* モバイルではflow-rowを縦積みにする */
+    @media (max-width: 600px) {
+      .flow-row {
+        flex-direction: column;
+        gap: 0;
+        align-items: stretch;
+      }
+      .flow-row .flow-box {
+        align-self: flex-start;
+      }
+      .flow-row .flow-step {
+        flex: none;
+        width: 100%;
+      }
+      /* 横矢印(→ ←)を縦矢印(↓)に変換 */
+      .flow-row .flow-arrow {
+        font-size: 0;
+        padding: 4px 0 4px 14px;
+      }
+      .flow-row .flow-arrow::before {
+        content: "↓";
+        font-size: 16px;
+        color: var(--color-primary);
+        font-weight: 700;
+      }
+      /* 最終行（完成品→あなた）は上下を逆順に */
+      .flow-row--return {
+        flex-direction: column-reverse;
+      }
+    }
+
+    /* ===== ピラミッド図 ===== */
+    .pyramid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 28px;
+    }
+
+    .pyramid-level {
+      padding: 12px 16px;
+      text-align: center;
+      border-radius: 10px;
+      font-size: 15px;
+      line-height: 1.5;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    }
+
+    .pyramid-level:first-child {
+      width: 60%;
+      background: var(--color-primary);
+      color: #fff;
+    }
+
+    .pyramid-level:nth-child(2) {
+      width: 80%;
+      background: #1a6bbf;
+      color: #fff;
+    }
+
+    .pyramid-level:last-child {
+      width: 100%;
+      background: var(--color-analogy-bg);
+      color: var(--color-ink);
+      border: 2px solid var(--color-primary);
+    }
+
+    .pyramid-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 400;
+      opacity: 0.9;
+      margin-top: 4px;
+    }
+
+    /* ===== スキルカードグリッド ===== */
+    .skill-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    @media (min-width: 641px) {
+      .skill-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .skill-card {
+      background: var(--color-canvas);
+      border: 1px solid var(--color-divider);
+      border-radius: 12px;
+      padding: 16px 14px;
+      text-align: center;
+    }
+
+    .chapter:nth-child(even) .skill-card {
+      background: var(--color-canvas);
+    }
+
+    .skill-card-icon {
+      font-size: 28px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .skill-card-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-ink);
+      margin-bottom: 4px;
+    }
+
+    .skill-card-desc {
+      font-size: 14px;
+      color: var(--color-muted);
+      line-height: 1.5;
+    }
+
+    /* ===== 用語バッジ ===== */
+    .term-badge {
+      display: inline-block;
+      background: #fff3cd;
+      border: 1px solid #f0c040;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #6b4a00;
+      margin-bottom: 20px;
+    }
+
+    /* ===== アコーディオン ===== */
+    .accordion {
+      border: 1px solid var(--color-divider);
+      border-radius: 12px;
+      margin-bottom: 28px;
+      overflow: hidden;
+    }
+
+    .accordion-trigger {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: var(--color-canvas);
+      border: none;
+      text-align: left;
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-ink);
+      cursor: pointer;
+      min-height: 44px;
+      transition: background 0.2s;
+    }
+
+    .chapter:nth-child(even) .accordion-trigger {
+      background: var(--color-canvas);
+    }
+
+    .accordion-trigger:hover {
+      background: var(--color-analogy-bg);
+    }
+
+    .accordion-trigger:focus-visible {
+      outline: 3px solid var(--color-primary);
+      outline-offset: -3px;
+    }
+
+    .accordion-icon {
+      font-size: 20px;
+      line-height: 1;
+      transition: transform 0.3s ease;
+      flex-shrink: 0;
+      margin-left: 12px;
+    }
+
+    .accordion-trigger[aria-expanded="true"] .accordion-icon {
+      transform: rotate(180deg);
+    }
+
+    .accordion-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .accordion-body--open {
+      max-height: 2000px;
+    }
+
+    .accordion-content {
+      padding: 16px 20px 20px;
+      border-top: 1px solid var(--color-divider);
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--color-ink);
+    }
+
+    /* ===== 章末まとめカード ===== */
+    .summary-card {
+      background: var(--color-summary-bg);
+      border: 1px solid #e8d5a0;
+      border-radius: 16px;
+      padding: 24px 24px;
+      margin-top: 8px;
+    }
+
+    .summary-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-ink);
+      letter-spacing: -0.3px;
+      margin-bottom: 14px;
+    }
+
+    .summary-list {
+      list-style: none;
+      padding: 0;
+      counter-reset: summary;
+    }
+
+    .summary-list li {
+      counter-increment: summary;
+      padding: 8px 0 8px 36px;
+      position: relative;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      line-height: 1.6;
+      font-size: 16px;
+    }
+
+    .summary-list li:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .summary-list li::before {
+      content: counter(summary);
+      position: absolute;
+      left: 0;
+      top: 8px;
+      width: 24px;
+      height: 24px;
+      background: var(--color-primary);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ===== 復習カード（第8章） ===== */
+    .review-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .review-item {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--color-canvas);
+      border: 1px solid var(--color-divider);
+      border-radius: 10px;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .review-term {
+      font-weight: 700;
+      color: var(--color-primary);
+      flex-shrink: 0;
+      min-width: 120px;
+    }
+
+    .review-desc {
+      color: var(--color-ink);
+    }
+
+    /* モバイルでは用語と説明を縦積みに */
+    @media (max-width: 600px) {
+      .review-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+      .review-term {
+        min-width: unset;
+        font-size: 15px;
+      }
+    }
+
+    /* ===== お題カード ===== */
+    .prompt-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    @media (min-width: 641px) {
+      .prompt-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .prompt-card {
+      background: var(--color-analogy-bg);
+      border: 1px solid #b3d1f5;
+      border-radius: 12px;
+      padding: 16px 18px;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--color-ink);
+    }
+
+    .prompt-card::before {
+      content: "💬 ";
+    }
+
+    /* ===== 困ったときのコツ（アコーディオン内リスト） ===== */
+    .tips-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .tips-list li {
+      padding: 8px 0 8px 24px;
+      position: relative;
+      border-bottom: 1px solid var(--color-divider);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .tips-list li:last-child {
+      border-bottom: none;
+    }
+
+    .tips-list li::before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      color: var(--color-primary);
+      font-weight: 700;
+    }
+
+    /* ===== テキストの強調 ===== */
+    strong {
+      font-weight: 700;
+      color: var(--color-ink);
+    }
+
+    /* ===== フォーカスリング ===== */
+    *:focus-visible {
+      outline: 3px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    /* ===== セクション区切り ===== */
+    .divider {
+      height: 1px;
+      background: var(--color-divider);
+      margin: 28px 0;
+    }
+
+    /* ===== 汎用サブセクションタイトル ===== */
+    h3.section-heading {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      margin-bottom: 14px;
+      color: var(--color-ink);
+    }
+
+    /* ===== カスタムエージェント紹介 ===== */
+    .info-box {
+      background: var(--color-parchment);
+      border: 1px solid var(--color-divider);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 28px;
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .chapter:nth-child(even) .info-box {
+      background: var(--color-canvas);
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ===== 固定ヘッダー ===== -->
+  <header id="site-header">
+    <div class="header-inner">
+      <span class="site-title">はじめての Genspark</span>
+      <span id="chapter-indicator" aria-live="polite">第1章 / 全9章</span>
+    </div>
+    <div id="progress-bar-wrapper">
+      <div id="progress-bar"></div>
+    </div>
+  </header>
+
+  <!-- ===== メインコンテンツ ===== -->
+  <main id="main-content">
+
+    <!-- ===== 第1章 ===== -->
+    <section id="chapter-1" class="chapter" data-chapter="1">
+      <div class="chapter-inner">
+        <span class="chapter-badge">第1章</span>
+        <h2 class="chapter-title">AIって何だろう？</h2>
+        <p class="chapter-subtitle">難しく考えなくて大丈夫。まずここから始めましょう</p>
+
+        <p class="chapter-intro">最近よく耳にする「AI（エーアイ）」。テレビやニュースで見かけるけど、難しそうで自分には関係ないかな……そんな風に思っていませんか？大丈夫です。AIは特別な人だけのものではありません。</p>
+
+        <div class="analogy-card">
+          <span class="analogy-icon" aria-hidden="true">💡</span>
+          <p>たとえるなら、何億冊もの本を読んで学んだ〝物知り博士〟が、あなたのスマホの中に住んでいるようなものです。24時間いつでも相談に乗ってくれます（基本機能は無料で利用できます）。</p>
+        </div>
+
+        <ul class="content-list">
+          <li>AIとは「大量の情報から学んで、人間の言葉を理解できるコンピューター」のこと</li>
+          <li>話しかけるだけで使える。難しい操作は一切不要</li>
+          <li>翻訳・文章作成・調べもの・料理レシピなど、何でも相談できる</li>
+          <li>ただし間違えることもある。大事なことは必ず確認しよう</li>
+        </ul>
+
+        <div class="accordion">
+          <button class="accordion-trigger" aria-expanded="false" aria-controls="acc-1-1">
+            AIと検索の違い、知ってる？
+            <span class="accordion-icon" aria-hidden="true">▼</span>
+          </button>
+          <div class="accordion-body" id="acc-1-1" role="region">
+            <div class="accordion-content">
+              検索エンジン（Googleなど）はキーワードに合うページを探して一覧表示するだけです。AIは質問の意味を理解して、自分の言葉で答えてくれます。まるで「リンクの一覧を出すだけの案内係」vs「直接答えてくれる専門家」の違いです。
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <h3 class="summary-title">「これだけ覚えれば大丈夫！」</h3>
+          <ol class="summary-list">
+            <li>AIは「大量に学んだ物知り博士」がスマホの中にいるようなもの</li>
+            <li>普通の言葉で話しかけるだけで使える</li>
+            <li>間違えることもある。大事なことは確認しよう</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 第2章 ===== -->
+    <section id="chapter-2" class="chapter" data-chapter="2">
+      <div class="chapter-inner">
+        <span class="chapter-badge">第2章</span>
+        <h2 class="chapter-title">2種類のAIを知ろう</h2>
+        <p class="chapter-subtitle">チャット型とエージェント型、何がどう違う？</p>
+
+        <p class="chapter-intro">AIには大きく分けて2種類あります。「質問したら答えてくれるAI」と「頼んだことを最後までやり遂げてくれるAI」です。この違いを知ると、Gensparkがどれだけすごいかよくわかります。</p>
+
+        <div class="analogy-card">
+          <span class="analogy-icon" aria-hidden="true">💡</span>
+          <p>チャット型AIは〝電話相談窓口〟。質問したら答えてくれますが、それ以上はやってくれません。エージェント型AIは〝旅行代理店のベテランスタッフ〟。行き先を伝えるだけで、交通・ホテル・観光スポットまで全部まとめたプランを持ってきてくれます。</p>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="compare-table" aria-label="チャット型AIとエージェント型AIの比較">
+            <thead>
+              <tr>
+                <th scope="col">比較項目</th>
+                <th scope="col">チャット型AI</th>
+                <th scope="col">エージェント型AI</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">動き方</th>
+                <td>質問に答えるだけ</td>
+                <td>自分で考えて動く</td>
+              </tr>
+              <tr>
+                <th scope="row">ユーザーの役割</th>
+                <td>毎回指示が必要</td>
+                <td>最初の一言だけでOK</td>
+              </tr>
+              <tr>
+                <th scope="row">できること</th>
+                <td>テキストで回答</td>
+                <td>調査→整理→資料作成まで完結</td>
+              </tr>
+              <tr>
+                <th scope="row">例え</th>
+                <td>辞書・電話相談</td>
+                <td>丸投げできる有能な部下</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <ul class="content-list">
+          <li>ChatGPTやGeminiは主に「チャット型」。質問→回答を繰り返す</li>
+          <li>Gensparkは両方できる。特に「エージェント型」が最大の強み</li>
+          <li>「丸投げ」できるのがエージェント型の革命的なポイント</li>
+        </ul>
+
+        <div class="summary-card">
+          <h3 class="summary-title">「今日の合言葉」</h3>
+          <ol class="summary-list">
+            <li>チャット型＝「答えてくれる」、エージェント型＝「やってくれる」</li>
+            <li>Gensparkはどちらも使える</li>
+            <li>合言葉は「丸投げできる有能な部下」</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 第3章 ===== -->
+    <section id="chapter-3" class="chapter" data-chapter="3">
+      <div class="chapter-inner">
+        <span class="chapter-badge">第3章</span>
+        <h2 class="chapter-title">Gensparkの画面を開いてみよう</h2>
+        <p class="chapter-subtitle">最初に見える画面の「どこに何があるか」を確認しよう</p>
+
+        <div class="notice-box">
+          <p class="notice-box-title">✅ 安心してください</p>
+          <ul>
+            <li>どのボタンを押しても、スマホやパソコンが壊れることはありません</li>
+            <li>間違えて送信してしまっても大丈夫。次の質問から始め直せます</li>
+            <li>ただし、名前・住所・銀行口座などの個人情報は入力しないようにしましょう</li>
+          </ul>
+        </div>
+
+        <p class="chapter-intro">Gensparkのサイト（genspark.ai）を開くと、シンプルな画面が現れます。「どこから手をつければいいの？」と思うかもしれませんが、実はとても簡単です。</p>
+
+        <div class="analogy-card">
+          <span class="analogy-icon" aria-hidden="true">💡</span>
+          <p>LINEでメッセージを送る感覚と同じです。中央のボックスに文字を打って、送信ボタンを押すだけ。それだけでAIが動き始めます。</p>
+        </div>
+
+        <h3 class="section-heading">画面の説明</h3>
+        <ol class="steps-list">
+          <li><strong>中央の入力欄</strong>（一番大きなボックス）→ ここに入力するとスーパーエージェントが起動します。サイドバーの「Super Agent」ボタンも同じものです。<strong>これがGensparkの主役</strong></li>
+          <li><strong>画面左のメニュー</strong>（縦に並んだアイコン）→ いろんな機能へのショートカット</li>
+          <li><strong>「Chat」ボタン</strong>（左メニューの上の方）→ AIモデルを自分で選んで1対1で会話できる場所（ChatGPTに似た使い心地）</li>
+          <li><strong>ショートカットアイコン</strong>（入力欄の下に並んでいる）→ スライド・画像・動画など専門エージェントに直接アクセスできる近道</li>
+        </ol>
+
+        <div class="analogy-card">
+          <span class="analogy-icon" aria-hidden="true">💡</span>
+          <p><strong>入力欄のすぐ下にあるアイコンって何？</strong><br>
+          スライド・画像・動画などのアイコンが並んでいます。これらをクリックすると、スーパーエージェントを通らずに<strong>各専門家AIに直接アクセス</strong>できます。「スライドだけ作りたい」「画像だけ生成したい」というときはアイコンからが効率的。「調べながらスライドも作って…」という複合作業はホームの入力欄（スーパーエージェント）にお任せです。</p>
+        </div>
+
+        <div class="accordion">
+          <button class="accordion-trigger" aria-expanded="false" aria-controls="acc-3-1">
+            Gensparkは無料で使える？
+            <span class="accordion-icon" aria-hidden="true">▼</span>
+          </button>
+          <div class="accordion-body" id="acc-3-1" role="region">
+            <div class="accordion-content">
+              基本的な機能は無料で使えます。より高度な機能や回数制限解除には有料プランがあります。まずは無料で試してみましょう。
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <h3 class="summary-title">「3秒でおさらい」</h3>
+          <ol class="summary-list">
+            <li>中央の入力欄 ＝ スーパーエージェント。サイドバーの「Super Agent」ボタンも同じ</li>
+            <li>入力欄の下のアイコンは専門家AIへの近道。スーパーエージェントを通らない</li>
+            <li>まずは入力欄に何か書いて送ってみよう！</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 第4章 ===== -->
+    <section id="chapter-4" class="chapter" data-chapter="4">
+      <div class="chapter-inner">
+        <span class="chapter-badge">第4章</span>
+        <h2 class="chapter-title">Gensparkでチャットしてみよう</h2>
+        <p class="chapter-subtitle">左メニューの「Chat」から、AIとおしゃべりしてみよう</p>
+
+        <p class="chapter-intro">この章ではまず「チャット型AI」として使う方法を練習しましょう。ChatGPTと同じような感覚で、AIに質問したり相談したりできます。</p>
+
+        <div class="analogy-card">
+          <span class="analogy-icon" aria-hidden="true">💡</span>
+          <p>友達にLINEを送るのと同じ感覚です。「今日の夕ご飯、何かいい案ある？」「この言葉の意味を教えて」──普通の言葉でOKです。</p>
+        </div>
+
+        <h3 class="section-heading">操作手順</h3>
+        <ol class="steps-list">
+          <li>画面の左はしにある「Chat」のボタンをタップします</li>
+          <li>画面下のほうに文字を入力するスペースが出てきます</li>
+          <li>質問したいことを普通の言葉で入力します（例：「おすすめの朝ご飯を教えて」）</li>
+          <li>入力欄の右にある送信ボタン（→のマーク）をタップします</li>
+          <li>AIが数秒で返事をしてくれます</li>
+        </ol>
+
+        <h3 class="section-heading">実際の会話例</h3>
+        <div class="chat-example">
+          <div class="chat-message chat-message--user">
+            <p class="chat-bubble--label">あなた</p>
+            <div class="chat-bubble chat-bubble--user">簡単に作れる夕ご飯のレシピを教えて</div>
+          </div>
+          <div class="chat-message chat-message--ai">
+            <p class="chat-bubble--label">AI</p>
+            <div class="chat-bubble chat-bubble--ai">もちろんです！今夜のおすすめは〝卵と玉ねぎの炒め物〟です。材料は……</div>
+          </div>
+        </div>
+
+        <ul class="content-list">
+          <li>うまく答えてくれないときは、別の言い方で聞き直してOK</li>
+          <li>「もっと詳しく教えて」「もう少し簡単に言って」と続けて頼める</li>
+          <li>AIは何度聞いても疲れない。遠慮せず質問しよう</li>
+        </ul>
+
+        <div class="accordion">
+          <button class="accordion-trigger" aria-expanded="false" aria-controls="acc-4-1">
+            どのAIモデルを選べばいい？
+            <span class="accordion-icon" aria-hidden="true">▼</span>
+          </button>
+          <div class="accordion-body" id="acc-4-1" role="region">
+            <div class="accordion-content">
+              Gensparkのチャットでは複数のAIが選べます。最初は「おすすめ」や「自動」のままで大丈夫です。慣れてきたら「Claude（クロード）は文章が得意」「Gemini（ジェミニ）は最新情報に強い」など試してみてください。
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <h3 class="summary-title">「ポイント3つ！」</h3>
+          <ol class="summary-list">
+            <li>「Chat」を押して、普通の言葉で話しかけるだけ</li>
+            <li>うまくいかないときは別の言い方で聞き直してOK</li>
+            <li>AIは何度聞いても疲れない。どんどん質問しよう</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 第5章 ===== -->
+    <section id="chapter-5" class="chapter" data-chapter="5">
+      <div class="chapter-inner">
+        <span class="chapter-badge">第5章</span>
+        <h2 class="chapter-title">スーパーエージェントに丸投げしよう</h2>
+        <p class="chapter-subtitle">Gensparkの「司令塔」が、計画から完成まで全部やってくれます</p>
+
+        <div class="term-badge">スーパーエージェント【Genspark独自の名称：AI司令塔】</div>
+
+        <p class="chapter-intro">いよいよGensparkの真骨頂です。「スーパーエージェント」という機能は、ただ質問に答えるだけでなく、頼んだことを最後までやり遂げてくれます。</p>
+
+        <div class="analogy-card">
+          <span class="analogy-icon" aria-hidden="true">💡</span>
+          <p>ベテランの旅行代理店スタッフに〝来月の温泉旅行を計画して〟と伝えると、交通・宿・観光スポットまで全部まとめたプランを作ってきてくれますよね。スーパーエージェントはそれと同じです。あなたは行き先を言うだけ。あとは全部お任せ！</p>
+        </div>
+
+        <h3 class="section-heading">動作の流れ</h3>
+        <div class="flow-diagram">
+          <div class="flow-row">
+            <div class="flow-box flow-box--user">あなた</div>
+            <div class="flow-arrow" aria-hidden="true">→</div>
+            <div class="flow-step">一言お願い（例：「温泉旅行のプランを作って」）</div>
+            <div class="flow-arrow" aria-hidden="true">→</div>
+            <div class="flow-box">スーパーエージェント</div>
+          </div>
+          <div style="margin: 8px 0; text-align: center; color: var(--color-primary); font-size: 20px;">↓</div>
+          <div class="flow-row">
+            <div class="flow-step">① 何をすべきか計画を立てる</div>
+          </div>
+          <div style="margin: 4px 0 4px 16px; color: var(--color-muted); font-size: 18px;">↓</div>
+          <div class="flow-row">
+            <div class="flow-step">② 必要な情報を調べる</div>
+          </div>
+          <div style="margin: 4px 0 4px 16px; color: var(--color-muted); font-size: 18px;">↓</div>
+          <div class="flow-row">
+            <div class="flow-step">③ 整理してまとめる</div>
+          </div>
+          <div style="margin: 8px 0; text-align: center; color: var(--color-primary); font-size: 20px;">↓</div>
+          <div class="flow-row flow-row--return">
+            <div class="flow-box flow-box--user">あなた</div>
+            <div class="flow-arrow" aria-hidden="true">←</div>
+            <div class="flow-step">完成品をお届け！</div>
+          </div>
+        </div>
+
+        <h3 class="section-heading">実際の使用例</h3>
+        <ul class="content-list">
+          <li>「来月の日帰り温泉旅行のプランを作って」→ 交通・宿・食事・料金まとめを自動作成</li>
+          <li>「健康的な1週間の夕ご飯メニューを考えて」→ 献立表と買い物リストを自動作成</li>
+          <li>「老後の家計について調べてまとめて」→ 調査レポートを自動作成</li>
+        </ul>
+
+        <ul class="content-list">
+          <li>使い方は簡単：画面中央の入力欄に「やりたいこと」を書くだけ</li>
+          <li>サイドバーの「Super Agent」ボタンも同じもの。どちらから入力しても全く同じ</li>
+          <li>チャット型と違い「答えるだけ」でなく「動いてくれる」</li>
+          <li>複雑な仕事ほど威力を発揮する</li>
+        </ul>
+
+        <div class="info-box">
+          <strong>💡 クレジット（使用ポイント）について知っておこう</strong><br><br>
+          スーパーエージェントは便利な反面、チャット型より多くのクレジット（AIの使用ポイント）を消費します。また、「スライドを作って」と頼むだけで、勝手に画像生成や動画生成まで走り出すことがあり、予想以上に消費されることも。<br><br>
+          <strong>使い分けのコツ：</strong><br>
+          • <strong>「スライドだけ作りたい」</strong>→ ホーム画面のスライドアイコンをクリック（専門家AIに直接、節約できる）<br>
+          • <strong>「調べてスライドを作って画像も…」</strong>→ スーパーエージェントに一括お願い（複合タスクは任せっきりが便利）
+        </div>
+
+        <div class="summary-card">
+          <h3 class="summary-title">「これが革命！」</h3>
+          <ol class="summary-list">
+            <li>中央の入力欄 ＝ サイドバーの「Super Agent」。どちらから入力しても同じ</li>
+            <li>スーパーエージェントが計画→調査→まとめまで全部やってくれる</li>
+            <li>単機能ならアイコン直接、複合タスクならスーパーエージェントが節約のコツ</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 第6章 ===== -->
+    <section id="chapter-6" class="chapter" data-chapter="6">
+      <div class="chapter-inner">
+        <span class="chapter-badge">第6章</span>
+        <h2 class="chapter-title">AIたちのチームワーク〜マルチエージェント〜</h2>
+        <p class="chapter-subtitle">裏では複数のAIが協力して働いています</p>
+
+        <div class="term-badge">マルチエージェント【複数のAIが役割を分担して協力する仕組み】</div>
+
+        <p class="chapter-intro">スーパーエージェントに頼むと、実は裏側では複数のAIたちが「分担」して働いています。これを「マルチエージェント」といいます。難しく聞こえますが、仕組みは会社の組織と同じです。</p>
+
+        <div class="analogy-card">
+          <span class="analogy-icon" aria-hidden="true">💡</span>
+          <p>会社の組織図を思い浮かべてください。社長（スーパーエージェント）が〝この仕事をやろう〟と指示すると、部長クラスのAIが段取りを立て、担当者クラスのAIが実際の作業を行います。あなたは社長に一言言うだけ。チームが全部動きます。</p>
+        </div>
+
+        <h3 class="section-heading">組織の3層構造</h3>
+        <div class="pyramid">
+          <div class="pyramid-level">
+            スーパーエージェント
+            <span class="pyramid-label">← あなたが話しかける相手（総司令官）</span>
+          </div>
+          <div class="pyramid-level">
+            高度なエージェント（複数）
+            <span class="pyramid-label">仕事を段取りする（部長クラス）</span>
+          </div>
+          <div class="pyramid-level">
+            基本エージェント（複数）
+            <span class="pyramid-label">実際に動く（担当者クラス）</span>
+          </div>
+        </div>
+
+        <ul class="content-list">
+          <li>ユーザーはスーパーエージェントに話しかけるだけ</li>
+          <li>チームの編成はAIが自動で行う。ユーザーは何もしなくていい</li>
+          <li>複雑な仕事ほど多くのAIが協力して動く</li>
+          <li>Gensparkでは9種類以上のAIモデルが連携している</li>
+        </ul>
+
+        <div class="accordion">
+          <button class="accordion-trigger" aria-expanded="false" aria-controls="acc-6-1">
+            エージェント型AIが得意なこと・苦手なこと
+            <span class="accordion-icon" aria-hidden="true">▼</span>
+          </button>
+          <div class="accordion-body" id="acc-6-1" role="region">
+            <div class="accordion-content">
+              <strong>得意なこと：</strong>複数のステップを自分で考えて実行すること、長い文章の調査・まとめ、繰り返し作業の自動化。<br><br>
+              <strong>苦手なこと：</strong>最新すぎる情報（データに含まれていない）、正確な数値計算、個人的な感情の共感。
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <h3 class="summary-title">「組織図で理解！」</h3>
+          <ol class="summary-list">
+            <li>裏側では複数のAIがチームを組んで動いている</li>
+            <li>「総司令官→部長→担当者」の3層構造</li>
+            <li>あなたは総司令官に一言言うだけでOK</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 第7章 ===== -->
+    <section id="chapter-7" class="chapter" data-chapter="7">
+      <div class="chapter-inner">
+        <span class="chapter-badge">第7章</span>
+        <h2 class="chapter-title">専門の道具「スキル」を使ってみよう</h2>
+        <p class="chapter-subtitle">スライド作成・画像生成・深い調査……200以上の専門ツールが揃っています</p>
+
+        <p class="chapter-intro">Gensparkには200種類以上の「スキル」という専門ツールが用意されています。でも安心してください。スーパーエージェントが自動で必要なスキルを選んでくれるので、あなたは意識しなくてOKです。</p>
+
+        <div class="analogy-card">
+          <span class="analogy-icon" aria-hidden="true">💡</span>
+          <p>病院の外来に行くと、まず受付で症状を伝えますよね。すると〝内科〟〝整形外科〟など適切な専門科に案内してくれます。スーパーエージェントが〝受付〟、それぞれのスキルが〝専門科〟です。あなたは受付に症状を伝えるだけ！</p>
+        </div>
+
+        <h3 class="section-heading">代表的なスキル</h3>
+        <div class="skill-grid">
+          <div class="skill-card">
+            <span class="skill-card-icon" aria-hidden="true">📊</span>
+            <p class="skill-card-name">AIスライド</p>
+            <p class="skill-card-desc">プレゼン用スライドを自動作成</p>
+          </div>
+          <div class="skill-card">
+            <span class="skill-card-icon" aria-hidden="true">🎨</span>
+            <p class="skill-card-name">AI画像生成</p>
+            <p class="skill-card-desc">文字で説明するだけで画像を作成</p>
+          </div>
+          <div class="skill-card">
+            <span class="skill-card-icon" aria-hidden="true">🔍</span>
+            <p class="skill-card-name">Deep Research</p>
+            <p class="skill-card-desc">大量の情報を徹底的に調査・分析</p>
+          </div>
+          <div class="skill-card">
+            <span class="skill-card-icon" aria-hidden="true">📋</span>
+            <p class="skill-card-name">AIシート</p>
+            <p class="skill-card-desc">表やデータを自動で整理</p>
+          </div>
+          <div class="skill-card">
+            <span class="skill-card-icon" aria-hidden="true">🎵</span>
+            <p class="skill-card-name">AI音楽</p>
+            <p class="skill-card-desc">音楽を自動生成</p>
+          </div>
+          <div class="skill-card">
+            <span class="skill-card-icon" aria-hidden="true">📝</span>
+            <p class="skill-card-name">ミーティングメモ</p>
+            <p class="skill-card-desc">会話を文字に起こして要約</p>
+          </div>
+        </div>
+
+        <ul class="content-list">
+          <li>スキルは手動で選んでも、スーパーエージェントに任せてもOK</li>
+          <li>「スライドを作って」と頼めば自動でAIスライドが起動</li>
+          <li>「徹底的に調べて」と頼めばDeep Researchが動く</li>
+        </ul>
+
+        <div class="accordion">
+          <button class="accordion-trigger" aria-expanded="false" aria-controls="acc-7-1">
+            カスタムエージェントって何？（上級者向け）
+            <span class="accordion-icon" aria-hidden="true">▼</span>
+          </button>
+          <div class="accordion-body" id="acc-7-1" role="region">
+            <div class="accordion-content">
+              Gensparkでは「カスタムエージェント」という機能で、自分だけのオリジナルAIを作ることができます。たとえば「料理専門の私専用AI」や「旅行プラン専用AI」を作って、毎回同じ指示をしなくても自動で動くようにできます。ChatGPTの「GPTs」と同じような機能です。まずは今の機能に慣れてから、ぜひ試してみてください。
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <h3 class="summary-title">「道具箱チェック！」</h3>
+          <ol class="summary-list">
+            <li>スキルは仕事専用の道具。200種類以上ある</li>
+            <li>スーパーエージェントが自動で必要なスキルを選んでくれる</li>
+            <li>「スライドを作って」「画像を作って」と普通に頼むだけ</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 第8章 ===== -->
+    <!-- ===== 第8章：Hub ===== -->
+    <section id="chapter-8" class="chapter" data-chapter="8">
+      <div class="chapter-inner">
+        <span class="chapter-badge">第8章</span>
+        <h2 class="chapter-title">Hub（ハブ）で仕事を整理しよう</h2>
+        <p class="chapter-subtitle">複数のプロジェクトを持つあなたへ ─ AIに「専用の引き出し」を渡す仕組み</p>
+
+        <p class="chapter-intro">仕事を複数かかえているとき、「さっきまで営業の話をしていたのに、今度は採用の話？」となると、AIに毎回ゼロから説明し直す必要があります。Gensparkの「Hub（ハブ）」は、その手間を解消するための機能です。</p>
+
+        <div class="analogy-card">
+          <span class="analogy-icon" aria-hidden="true">💡</span>
+          <p>普通のスーパーエージェントは「共有のデスク」。毎回自分の書類を持ってきて、仕事の説明をゼロからしなければなりません。HubはAIに「引き出し付きの専用机」を渡すようなものです。引き出しにはプロジェクトのファイルが全部入っていて、前回の続きから考えてくれます。「営業のHub」「採用のHub」「新規事業のHub」と机を分ければ、書類が混ざらず、チームのメンバーも同じ机を使えます。</p>
+        </div>
+
+        <h3 class="section-heading">Hubでできること</h3>
+        <ul class="content-list">
+          <li><strong>プロジェクトごとに専用スペースを作れる</strong> ─ 営業・採用・企画など、テーマ別に整理できる</li>
+          <li><strong>ファイルをまとめて保存できる</strong> ─ PDFや資料をあらかじめ入れておけば、毎回アップロードしなくていい</li>
+          <li><strong>前回の続きから始められる</strong> ─ AIがHub内の会話履歴を覚えていて、続きから考えてくれる</li>
+          <li><strong>チームで使える</strong> ─ メンバーを招待すれば、全員が同じファイルや会話を共有できる</li>
+        </ul>
+
+        <h3 class="section-heading">Hub内のチャットはスーパーエージェントと同じ？</h3>
+        <div class="analogy-card">
+          <span class="analogy-icon" aria-hidden="true">💡</span>
+          <p>答えは「<strong>入力画面は同じ、裏側の記憶が違う</strong>」です。Hub内でもスーパーエージェントがデフォルトで起動し、使い方はまったく同じです。ただし、Hubには「このプロジェクトの資料」「これまでの会話の記憶」が蓄積されているため、スーパーエージェントがより賢く・効率よく動きます。同じ道具を、より情報が充実した引き出しで使うイメージです。</p>
+        </div>
+
+        <div class="accordion">
+          <button class="accordion-trigger" aria-expanded="false" aria-controls="acc-8-hub">
+            Hubの作り方（かんたん3ステップ）
+            <span class="accordion-icon" aria-hidden="true">▼</span>
+          </button>
+          <div class="accordion-body" id="acc-8-hub" role="region" aria-labelledby="acc-hub-trigger">
+            <div class="accordion-content">
+              <ol class="steps-list">
+                <li>画面左のサイドバーにある「＋ New」ボタンをタップします</li>
+                <li>Hubの名前（例：「営業プロジェクト」）を入力します</li>
+                <li>「Create Hub」を押すだけ ─ すぐに専用スペースが作られます</li>
+              </ol>
+              <p style="margin-top:12px; font-size:16px; color:var(--color-muted);">作成後は、よく使うファイルをHub内に保存しておくと便利です。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <h3 class="summary-title">「整理の達人になろう！」</h3>
+          <ol class="summary-list">
+            <li>Hubはプロジェクトごとの「引き出し付き専用机」。書類も記憶も整理できる</li>
+            <li>Hub内のチャットはスーパーエージェントと同じ。でも記憶が蓄積されてより賢い</li>
+            <li>チームで共有もできる。メンバー全員が続きから仕事できる</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 第9章：まとめ ===== -->
+    <section id="chapter-9" class="chapter" data-chapter="9">
+      <div class="chapter-inner">
+        <span class="chapter-badge">第9章</span>
+        <h2 class="chapter-title">まとめと次のステップ</h2>
+        <p class="chapter-subtitle">ここまで学んだこと、おさらいしましょう</p>
+
+        <p class="chapter-intro">全8章、お疲れさまでした！AIの基礎からGensparkのスーパーエージェント・マルチエージェント・スキル・Hubまで、一通り学んできました。最後に全体をまとめて、今日から使えるヒントをお伝えします。</p>
+
+        <h3 class="section-heading">学習のまとめ</h3>
+        <div class="review-grid">
+          <div class="review-item">
+            <span class="review-term">AIとは</span>
+            <span class="review-desc">大量に学んだ物知り博士がスマホの中に</span>
+          </div>
+          <div class="review-item">
+            <span class="review-term">チャット型AI</span>
+            <span class="review-desc">質問に答えてくれる電話相談窓口</span>
+          </div>
+          <div class="review-item">
+            <span class="review-term">エージェント型AI</span>
+            <span class="review-desc">丸投げできる旅行代理店スタッフ</span>
+          </div>
+          <div class="review-item">
+            <span class="review-term">スーパーエージェント</span>
+            <span class="review-desc">Gensparkの総司令官。全部やってくれる</span>
+          </div>
+          <div class="review-item">
+            <span class="review-term">マルチエージェント</span>
+            <span class="review-desc">AIたちの会社組織。チームで動く</span>
+          </div>
+          <div class="review-item">
+            <span class="review-term">スキル</span>
+            <span class="review-desc">専門の道具箱。スーパーエージェントが自動で選ぶ</span>
+          </div>
+          <div class="review-item">
+            <span class="review-term">Hub（ハブ）</span>
+            <span class="review-desc">プロジェクト専用の引き出し付き机。記憶が蓄積される</span>
+          </div>
+          <div class="review-item">
+            <span class="review-term">アイコン直接 vs スーパーエージェント</span>
+            <span class="review-desc">単機能ならアイコンが効率的。複合タスクはスーパーエージェントへ丸投げ</span>
+          </div>
+        </div>
+
+        <h3 class="section-heading">今すぐ試せるお題集</h3>
+        <div class="prompt-grid">
+          <div class="prompt-card">来週の日帰り旅行プランを作って</div>
+          <div class="prompt-card">高血圧に良い食事を1週間分考えて</div>
+          <div class="prompt-card">孫への誕生日メッセージを感動的に書いて</div>
+          <div class="prompt-card">老後の年金と支出について分かりやすく教えて</div>
+        </div>
+        <p style="font-size:14px; color:var(--color-muted); margin-bottom:28px; line-height:1.7;">※ 医療・健康・金融に関するAIの回答はあくまで参考情報です。重要な判断は必ず専門家（医師・ファイナンシャルプランナー等）にご相談ください。</p>
+
+        <div class="accordion">
+          <button class="accordion-trigger" aria-expanded="false" aria-controls="acc-8-1">
+            困ったときのコツ
+            <span class="accordion-icon" aria-hidden="true">▼</span>
+          </button>
+          <div class="accordion-body" id="acc-8-1" role="region">
+            <div class="accordion-content">
+              <ul class="tips-list">
+                <li><strong>答えがおかしい時：</strong>「もう少し分かりやすく」「別の方法で教えて」と言い直そう</li>
+                <li><strong>うまく動かない時：</strong>ページを更新して最初からやり直してOK</li>
+                <li><strong>疑問が出たら：</strong>遠慮せず「〇〇って何？」と追加で聞こう</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <strong>カスタムエージェントとSparkpageの紹介</strong><br>
+          Gensparkにはまだまだ機能があります。「カスタムエージェント」では自分だけのオリジナルAIが作れます。「Sparkpage」は調べものをするとAIが自動でまとめページを作ってくれる機能です。慣れてきたらぜひ探索してみてください。
+        </div>
+
+        <div class="summary-card">
+          <h3 class="summary-title">「あなたのGenspark生活、スタート！」</h3>
+          <ol class="summary-list">
+            <li>中央の入力欄に普通の言葉で話しかけるだけ</li>
+            <li>わからなくなったらこのページに戻っておさらいしよう</li>
+            <li>まず1つ、今日試してみよう！</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== 固定フッター ===== -->
+  <footer id="site-footer">
+    <div class="footer-inner">
+      <button id="btn-prev" class="nav-btn nav-btn--outline">← 前の章</button>
+      <button id="btn-next" class="nav-btn nav-btn--primary">次の章 →</button>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const TOTAL_CHAPTERS = 9;
+      let currentChapter = 1;
+
+      // ===== DOM参照 =====
+      const chapterIndicator = document.getElementById('chapter-indicator');
+      const progressBar = document.getElementById('progress-bar');
+      const btnPrev = document.getElementById('btn-prev');
+      const btnNext = document.getElementById('btn-next');
+      const sections = Array.from(document.querySelectorAll('section.chapter'));
+
+      // ===== 進捗バーの更新 =====
+      function updateProgressBar() {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const percent = docHeight > 0 ? Math.min(100, Math.round((scrollTop / docHeight) * 100)) : 0;
+        progressBar.style.width = percent + '%';
+      }
+
+      // ===== ボタン状態の更新 =====
+      function updateButtons() {
+        // 前の章ボタン
+        if (currentChapter <= 1) {
+          btnPrev.classList.add('nav-btn--hidden');
+        } else {
+          btnPrev.classList.remove('nav-btn--hidden');
+        }
+
+        // 次の章ボタン
+        if (currentChapter >= TOTAL_CHAPTERS) {
+          btnNext.innerHTML = '<span aria-hidden="true">✅</span> 完了！最初から読む';
+        } else {
+          btnNext.textContent = '次の章 →';
+        }
+      }
+
+      // ===== 章インジケーター更新 =====
+      function updateIndicator(n) {
+        currentChapter = n;
+        chapterIndicator.textContent = '第' + n + '章 / 全' + TOTAL_CHAPTERS + '章';
+        updateButtons();
+      }
+
+      // ===== 章へスクロール =====
+      function scrollToChapter(n) {
+        const target = document.getElementById('chapter-' + n);
+        if (!target) return;
+        const headerHeight = document.getElementById('site-header').offsetHeight;
+        const targetTop = target.getBoundingClientRect().top + window.scrollY - headerHeight;
+        window.scrollTo({ top: targetTop, behavior: 'smooth' });
+      }
+
+      // ===== IntersectionObserver で現在章を検知 =====
+      const siteHeader = document.getElementById('site-header');
+      const observerOptions = {
+        root: null,
+        rootMargin: '-' + siteHeader.offsetHeight + 'px 0px -40% 0px',
+        threshold: 0
+      };
+
+      const observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            const chapterNum = parseInt(entry.target.getAttribute('data-chapter'), 10);
+            if (chapterNum && chapterNum !== currentChapter) {
+              updateIndicator(chapterNum);
+            }
+          }
+        });
+      }, observerOptions);
+
+      sections.forEach(function (section) {
+        observer.observe(section);
+      });
+
+      // ===== フッターボタンのクリックハンドラ =====
+      btnPrev.addEventListener('click', function () {
+        if (currentChapter > 1) {
+          scrollToChapter(currentChapter - 1);
+        }
+      });
+
+      btnNext.addEventListener('click', function () {
+        if (currentChapter < TOTAL_CHAPTERS) {
+          scrollToChapter(currentChapter + 1);
+        } else {
+          // 最終章：最初へ戻る
+          scrollToChapter(1);
+        }
+      });
+
+      // ===== アコーディオン =====
+      const accordionTriggers = document.querySelectorAll('.accordion-trigger');
+
+      accordionTriggers.forEach(function (trigger) {
+        const bodyId = trigger.getAttribute('aria-controls');
+        const body = document.getElementById(bodyId);
+        if (!body) return;
+
+        trigger.addEventListener('click', function () {
+          const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+
+          if (isExpanded) {
+            // 閉じる
+            trigger.setAttribute('aria-expanded', 'false');
+            body.classList.remove('accordion-body--open');
+            body.style.maxHeight = '0';
+          } else {
+            // 開く
+            trigger.setAttribute('aria-expanded', 'true');
+            body.classList.add('accordion-body--open');
+            // コンテンツの実際の高さを取得してアニメーション
+            const content = body.querySelector('.accordion-content');
+            const targetHeight = content ? content.scrollHeight + 36 : 300;
+            body.style.maxHeight = targetHeight + 'px';
+          }
+        });
+      });
+
+      // ===== スクロールイベント =====
+      let ticking = false;
+      window.addEventListener('scroll', function () {
+        if (!ticking) {
+          window.requestAnimationFrame(function () {
+            updateProgressBar();
+            ticking = false;
+          });
+          ticking = true;
+        }
+      }, { passive: true });
+
+      // ===== 初期化 =====
+      updateProgressBar();
+      updateIndicator(1);
+    })();
+  </script>
+</body>
+</html>
